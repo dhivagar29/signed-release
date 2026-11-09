@@ -51,9 +51,11 @@ jobs:
           echo "artifact=${ARTIFACT}" >>"${GITHUB_OUTPUT}"
 
       - name: Build dummy artifact
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
         run: |
           set -euo pipefail
-          ./scripts/build-artifact.sh "${{ steps.meta.outputs.version }}"
+          ./scripts/build-artifact.sh "$VERSION"
 
       - name: Upload dist
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
