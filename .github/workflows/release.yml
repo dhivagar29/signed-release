@@ -68,6 +68,8 @@ jobs:
   sign:
     name: sign-and-attest
     needs: build
+    # Only tag builds sign (and write to public Rekor); manual runs build only.
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: read
