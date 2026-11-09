@@ -1,0 +1,57 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Install shellcheck
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck
+
+      - name: Install actionlint
+        env:
+          AL_VER: '1.7.7'
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://github.com/rhysd/actionlint/releases/download/v${AL_VER}/actionlint_${AL_VER}_linux_amd64.tar.gz" \
+            -o /tmp/actionlint.tgz
+          curl -fsSL "https://github.com/rhysd/actionlint/releases/download/v${AL_VER}/actionlint_${AL_VER}_checksums.txt" \
+            -o /tmp/actionlint.sums
+          EXPECTED="$(grep "actionlint_${AL_VER}_linux_amd64.tar.gz\$" /tmp/actionlint.sums | awk '{print $1}')"
+          ACTUAL="$(sha256sum /tmp/actionlint.tgz | awk '{print $1}')"
+          test "${EXPECTED}" = "${ACTUAL}"
+          tar -xzf /tmp/actionlint.tgz -C /tmp actionlint
+          sudo install -m 755 /tmp/actionlint /usr/local/bin/actionlint
+
+      - name: shellcheck
+        run: |
+          set -euo pipefail
+          shellcheck scripts/*.sh src/*.sh test/*.sh
+
+      - name: actionlint
+        run: |
+          set -euo pipefail
+          actionlint -color
+
+      - name: Offline tests
+        run: |
+          set -euo pipefail
+          ./test/verify.test.sh

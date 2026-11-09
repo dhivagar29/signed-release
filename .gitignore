@@ -1,0 +1,10 @@
+dist/
+*.tar.gz
+*.cosign.bundle
+*.sig
+*.pem
+*.key
+cosign.key
+cosign.pub
+.DS_Store
+*.swp

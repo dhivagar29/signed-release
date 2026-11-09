@@ -1,0 +1,33 @@
+# Example verify output for signed-release
+# The sha256 section below was produced offline on a local dummy build
+# (scripts/build-artifact.sh v0.0.0-sample). The cosign and gh sections are
+# EXAMPLE output only — they were not produced by contacting Fulcio, Rekor,
+# or GitHub attestations from this machine.
+
+$ ./scripts/verify.sh \
+    --artifact signed-release-v0.0.0-sample.tar.gz \
+    --checksums SHA256SUMS.txt \
+    --bundle signed-release-v0.0.0-sample.tar.gz.cosign.bundle \
+    --repo dhivagar29/signed-release
+
+==> 1/3 sha256
+OK  bc6920fda7e084519b8e35e1173c5121cd2549de5bbf861dd446a65889efdbed  signed-release-v0.0.0-sample.tar.gz
+
+==> 2/3 cosign verify-blob (keyless)
+# --- example output (not run locally; keyless verify needs the public Rekor entry) ---
+Verified OK
+
+==> 3/3 gh attestation verify
+# --- example output (not run locally) ---
+Loaded digest sha256:bc6920fda7e084519b8e35e1173c5121cd2549de5bbf861dd446a65889efdbed for file://signed-release-v0.0.0-sample.tar.gz
+Loaded 1 attestation from GitHub API
+✓ Verification succeeded!
+
+sid......: <attestation-id>
+repo.....: dhivagar29/signed-release
+predicate: https://slsa.dev/provenance/v1
+
+OK  cosign verify-blob
+OK  gh attestation verify
+
+All checks passed for .../signed-release-v0.0.0-sample.tar.gz
