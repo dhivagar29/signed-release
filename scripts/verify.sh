@@ -121,7 +121,8 @@ if ! command -v gh >/dev/null 2>&1; then
   echo "error: gh not found on PATH" >&2
   exit 1
 fi
-gh attestation verify "${ARTIFACT}" --repo "${REPO}"
+gh attestation verify "${ARTIFACT}" --repo "${REPO}" \
+  --signer-workflow "${REPO}/.github/workflows/release.yml"
 echo "OK  gh attestation verify"
 
 echo

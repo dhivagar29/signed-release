@@ -29,7 +29,7 @@ flowchart LR
 | `sign` | `contents: read`, `actions: read`, **`id-token: write`**, **`attestations: write`** | Download dist, `cosign sign-blob` (OIDC → Fulcio → **public Rekor**), `actions/attest-build-provenance` |
 | `release` | **`contents: write`**, `actions: read` | On tag pushes only: publish the tarball, cosign bundle, and checksums as a GitHub Release |
 
-Triggers: tag push `v*` and `workflow_dispatch` (build+sign always; GitHub Release only when `github.ref_type == 'tag'`). Every third-party action is pinned by **full commit SHA**. No `pull_request_target`.
+Triggers: tag push `v*` and `workflow_dispatch`. Tags must match `^v[0-9]+\.[0-9]+\.[0-9]+$` or the build fails. Signing and the GitHub Release run only on a tag **push**; a manual run only builds. Every third-party action is pinned by **full commit SHA**. No `pull_request_target`.
 
 OIDC subject shape for the signing identity:
 
@@ -60,7 +60,7 @@ Checks, in order:
 
 1. **SHA-256** of the artifact against `SHA256SUMS.txt`
 2. **`cosign verify-blob`** with `--certificate-identity-regexp` pinned to this repo’s `release.yml` on a `v*` tag, and `--certificate-oidc-issuer https://token.actions.githubusercontent.com`
-3. **`gh attestation verify`** for the SLSA provenance attestation
+3. **`gh attestation verify`** for the SLSA provenance attestation, pinned with `--signer-workflow` to this repo's `release.yml`
 
 Sample (partly offline) output: [`docs/sample-verify.txt`](docs/sample-verify.txt).
 
@@ -93,7 +93,8 @@ Do **not** run `cosign sign-blob` in keyless mode on a laptop against this tree:
 
 - Signs a **dummy** hello-world tarball only, by design (public Rekor).
 - Keyless cosign in CI **always** contacts Fulcio/Rekor; there is no offline keyless mode.
-- `release` publishes only on tag pushes (`v*`); `workflow_dispatch` builds and signs artifacts for inspection but does not create a GitHub Release.
+- `sign` and `release` run only on tag pushes (`v*`); `workflow_dispatch` builds the artifact for inspection but never signs it or writes to Rekor.
+- Signing is only as trustworthy as whoever can create `v*` tags. Restrict tag creation with a repository tag ruleset (owner setting).
 - `verify.sh` requires `cosign` and `gh` on the consumer PATH; the offline test suite stubs them.
 - Does not implement offline root-of-trust / TUF mirrors, cosign policy-controller, or binary authorization admission.
 - Provenance is GitHub’s attestation store + SLSA predicate from `actions/attest-build-provenance`, not a custom in-toto layout.

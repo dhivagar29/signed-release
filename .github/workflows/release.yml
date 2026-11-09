@@ -42,6 +42,11 @@ jobs:
         run: |
           set -euo pipefail
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            # Reject anything that is not a plain semver tag before it is used.
+            if [[ ! "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::tag must match ^v[0-9]+.[0-9]+.[0-9]+$" >&2
+              exit 1
+            fi
             VERSION="${GITHUB_REF_NAME}"
           else
             VERSION="dev-${GITHUB_SHA:0:7}"
@@ -70,8 +75,8 @@ jobs:
   sign:
     name: sign-and-attest
     needs: build
-    # Only tag builds sign (and write to public Rekor); manual runs build only.
-    if: startsWith(github.ref, 'refs/tags/v')
+    # Only tag pushes sign (and write to public Rekor); manual runs never sign.
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -119,7 +124,7 @@ jobs:
   release:
     name: publish-github-release
     needs: [build, sign]
-    if: github.ref_type == 'tag'
+    if: github.event_name == 'push' && github.ref_type == 'tag'
     runs-on: ubuntu-latest
     permissions:
       contents: write
